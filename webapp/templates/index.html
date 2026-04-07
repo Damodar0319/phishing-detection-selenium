@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Phishing Detection</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: #040d1a;
+      font-family: 'Inter', sans-serif;
+      color: #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 60px 20px 80px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(59,130,246,0.12);
+      border: 1px solid rgba(59,130,246,0.3);
+      color: #60a5fa;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      border-radius: 20px;
+      margin-bottom: 24px;
+    }
+
+    .badge-dot {
+      width: 6px; height: 6px;
+      background: #3b82f6;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    h1 {
+      font-size: clamp(28px, 5vw, 44px);
+      font-weight: 700;
+      background: linear-gradient(135deg, #ffffff 30%, #60a5fa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-align: center;
+      line-height: 1.2;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      color: #64748b;
+      font-size: 15px;
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 32px;
+      margin-bottom: 40px;
+      opacity: 0.5;
+    }
+
+    .stat { text-align: center; }
+    .stat-num { font-size: 18px; font-weight: 700; color: #60a5fa; }
+    .stat-lbl { font-size: 11px; color: #475569; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+    .search-bar {
+      display: flex;
+      align-items: center;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      padding: 6px 6px 6px 18px;
+      width: 100%;
+      max-width: 620px;
+      gap: 10px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      margin-bottom: 48px;
+    }
+
+    .search-bar:focus-within {
+      border-color: rgba(59,130,246,0.5);
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+    }
+
+    .search-icon {
+      color: #475569;
+      flex-shrink: 0;
+      font-size: 16px;
+    }
+
+    .search-bar input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #e2e8f0;
+      font-size: 15px;
+      font-family: 'Inter', sans-serif;
+      padding: 8px 0;
+    }
+
+    .search-bar input::placeholder { color: #475569; }
+
+    .scan-btn {
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 22px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .scan-btn:hover { background: linear-gradient(135deg, #2563eb, #1e40af); transform: translateY(-1px); }
+    .scan-btn:active { transform: translateY(0); }
+    .scan-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .result-panel {
+      width: 100%;
+      max-width: 620px;
+      display: none;
+      flex-direction: column;
+      gap: 16px;
+      animation: slideUp 0.4s ease;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .verdict-card {
+      border-radius: 16px;
+      padding: 28px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      border: 1px solid;
+    }
+
+    .verdict-card.safe    { background: rgba(16,185,129,0.07);  border-color: rgba(16,185,129,0.25); }
+    .verdict-card.danger  { background: rgba(239,68,68,0.07);   border-color: rgba(239,68,68,0.25); }
+    .verdict-card.warning { background: rgba(245,158,11,0.07);  border-color: rgba(245,158,11,0.25); }
+
+    .verdict-icon {
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+
+    .safe    .verdict-icon { background: rgba(16,185,129,0.15); }
+    .danger  .verdict-icon { background: rgba(239,68,68,0.15); }
+    .warning .verdict-icon { background: rgba(245,158,11,0.15); }
+
+    .verdict-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .safe    .verdict-label { color: #10b981; }
+    .danger  .verdict-label { color: #ef4444; }
+    .warning .verdict-label { color: #f59e0b; }
+
+    .verdict-text {
+      font-size: 22px;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+
+    .metrics-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .metric-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      padding: 18px 20px;
+    }
+
+    .metric-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #475569;
+      margin-bottom: 8px;
+    }
+
+    .metric-value {
+      font-size: 26px;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+
+    .score-bar {
+      margin-top: 10px;
+      height: 4px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .score-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.8s ease;
+    }
+
+    .reasons-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .reasons-title {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #475569;
+      margin-bottom: 14px;
+    }
+
+    .reason-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 14px;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+
+    .reason-item:last-child { border-bottom: none; padding-bottom: 0; }
+
+    .reason-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #f59e0b;
+      margin-top: 6px;
+      flex-shrink: 0;
+    }
+
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <div class="badge">
+    <span class="badge-dot"></span>
+    AI-Powered
+  </div>
+
+  <h1>Phishing Detection<br>System</h1>
+  <p class="subtitle">Analyze any URL for phishing threats in real-time</p>
+
+  <div class="stats-row">
+    <div class="stat"><div class="stat-num">95%</div><div class="stat-lbl">Accuracy</div></div>
+    <div class="stat"><div class="stat-num">1K+</div><div class="stat-lbl">URLs Scanned</div></div>
+    <div class="stat"><div class="stat-num">&lt;20s</div><div class="stat-lbl">Response</div></div>
+  </div>
+
+  <div class="search-bar">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="urlInput" placeholder="Enter a URL to scan, e.g. https://example.com" />
+    <button class="scan-btn" id="scanBtn" onclick="analyze()">
+      <span id="btnContent">Scan URL</span>
+    </button>
+  </div>
+
+  <div class="result-panel" id="result">
+    <div class="verdict-card" id="verdictCard">
+      <div class="verdict-icon" id="verdictIcon"></div>
+      <div>
+        <div class="verdict-label" id="verdictLabel"></div>
+        <div class="verdict-text" id="verdict"></div>
+      </div>
+    </div>
+
+    <div class="metrics-row">
+      <div class="metric-card">
+        <div class="metric-label">Threat Score</div>
+        <div class="metric-value" id="score">—</div>
+        <div class="score-bar"><div class="score-fill" id="scoreBar" style="width:0%"></div></div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Confidence</div>
+        <div class="metric-value" id="confidence">—</div>
+        <div class="score-bar"><div class="score-fill" id="confBar" style="width:0%; background:#3b82f6"></div></div>
+      </div>
+    </div>
+
+    <div class="reasons-card">
+      <div class="reasons-title">Detection Reasons</div>
+      <div id="reasons"></div>
+    </div>
+  </div>
+
+  <script>
+    async function analyze() {
+      const url = document.getElementById("urlInput").value.trim();
+      if (!url) return;
+
+      const btn = document.getElementById("scanBtn");
+      btn.disabled = true;
+      document.getElementById("btnContent").innerHTML = '<div class="spinner"></div>';
+
+      try {
+        const res = await fetch("/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url })
+        });
+        const data = await res.json();
+
+        const panel = document.getElementById("result");
+        panel.style.display = "flex";
+
+        if (data.error) {
+          document.getElementById("verdictCard").className = "verdict-card warning";
+          document.getElementById("verdictIcon").textContent = "⚠️";
+          document.getElementById("verdictLabel").textContent = "Error";
+          document.getElementById("verdict").textContent = data.error;
+          document.getElementById("reasons").innerHTML = "";
+          return;
+        }
+
+        const v = (data.verdict || "").toLowerCase();
+        const isSafe   = v.includes("safe") || v.includes("legit");
+        const isDanger = v.includes("phish") || v.includes("danger") || v.includes("malicious");
+
+        const card = document.getElementById("verdictCard");
+        card.className = "verdict-card " + (isSafe ? "safe" : isDanger ? "danger" : "warning");
+
+        document.getElementById("verdictIcon").textContent  = isSafe ? "✅" : isDanger ? "🚨" : "⚠️";
+        document.getElementById("verdictLabel").textContent = isSafe ? "Safe" : isDanger ? "Threat Detected" : "Warning";
+        document.getElementById("verdict").textContent      = data.verdict;
+
+        const score = parseFloat(data.final_score) || 0;
+        document.getElementById("score").textContent = data.final_score;
+        const scoreColor = score > 0.7 ? "#ef4444" : score > 0.4 ? "#f59e0b" : "#10b981";
+        const scoreBar = document.getElementById("scoreBar");
+        scoreBar.style.width   = (score * 100) + "%";
+        scoreBar.style.background = scoreColor;
+
+        const conf = parseFloat(data.confidence) || 0;
+        document.getElementById("confidence").textContent  = data.confidence;
+        document.getElementById("confBar").style.width     = (conf * 100) + "%";
+
+        const reasonsEl = document.getElementById("reasons");
+        reasonsEl.innerHTML = "";
+        (data.reasons || []).forEach(r => {
+          const div = document.createElement("div");
+          div.className = "reason-item";
+          div.innerHTML = '<div class="reason-dot"></div><span>' + r + '</span>';
+          reasonsEl.appendChild(div);
+        });
+
+      } catch (e) {
+        document.getElementById("result").style.display = "flex";
+        document.getElementById("verdictCard").className  = "verdict-card warning";
+        document.getElementById("verdictIcon").textContent  = "⚠️";
+        document.getElementById("verdictLabel").textContent = "Error";
+        document.getElementById("verdict").textContent      = "Could not reach server.";
+      } finally {
+        btn.disabled = false;
+        document.getElementById("btnContent").textContent = "Scan URL";
+      }
+    }
+
+    document.getElementById("urlInput").addEventListener("keydown", e => {
+      if (e.key === "Enter") analyze();
+    });
+  </script>
+
+</body>
+</html>
