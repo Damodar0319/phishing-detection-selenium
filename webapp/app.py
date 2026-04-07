@@ -46,5 +46,4 @@ def analyze():
 
 
 # 🔥 IMPORTANT: keep this (since you're running as module)
-if __name__ == "__main__":
-    app.run(debug=True)
+app.run(debug=True)
