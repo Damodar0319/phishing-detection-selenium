@@ -23,4 +23,4 @@ ENV PYTHONUNBUFFERED=1
 ENV PORT=5000
 
 # Command to run gunicorn
-CMD gunicorn -w 2 -b 0.0.0.0:$PORT webapp.app:app
+CMD gunicorn -w 1 --threads 2 -b 0.0.0.0:$PORT webapp.app:app

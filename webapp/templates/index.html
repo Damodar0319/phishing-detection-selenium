@@ -353,10 +353,20 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ url })
         });
-        const data = await res.json();
+        
+        let data;
+        try {
+            data = await res.json();
+        } catch(err) {
+            throw new Error("Server returned an invalid response (might have run out of memory or timed out).");
+        }
 
         const panel = document.getElementById("result");
         panel.style.display = "flex";
+
+        if (!res.ok) {
+           throw new Error(data.error || `HTTP Error ${res.status}`);
+        }
 
         if (data.error) {
           document.getElementById("verdictCard").className = "verdict-card warning";
@@ -402,8 +412,8 @@
         document.getElementById("result").style.display = "flex";
         document.getElementById("verdictCard").className  = "verdict-card warning";
         document.getElementById("verdictIcon").textContent  = "⚠️";
-        document.getElementById("verdictLabel").textContent = "Error";
-        document.getElementById("verdict").textContent      = "Could not reach server.";
+        document.getElementById("verdictLabel").textContent = "System Error";
+        document.getElementById("verdict").textContent      = e.message || "Could not reach server.";
       } finally {
         btn.disabled = false;
         document.getElementById("btnContent").textContent = "Scan URL";
