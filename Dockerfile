@@ -22,5 +22,5 @@ COPY . .
 ENV PYTHONUNBUFFERED=1
 ENV PORT=5000
 
-# Command to run gunicorn
-CMD gunicorn -w 1 --threads 2 -b 0.0.0.0:$PORT webapp.app:app
+# Command to run gunicorn (Extended timeout to 120s for slow Selenium scans)
+CMD gunicorn -w 1 --threads 2 --timeout 120 -b 0.0.0.0:$PORT webapp.app:app
